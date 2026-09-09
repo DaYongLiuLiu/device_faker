@@ -78,9 +78,10 @@ pub fn apply_cow_spoof(
         }
     };
 
-    // 长值不预过滤：已存在的 long 模式 prop（如 ro.build.fingerprint，
-    // 设备原生值就 > 92 字节）可原地 update；inline prop 超长与全新长值
-    // 属性由 remove+emplace / emplace(long) 路径处理。
+    // 长值不预过滤：ksu_props ≥ ddb6ee7 的 `update()` 原地支持任意长度的新值
+    // （≥ PROP_VALUE_MAX 时内部 allocate 新 long buffer 并改写 prop_info 的
+    // long offset），inline→long、long→更长都直接成功；只有全新属性走
+    // emplace(long) 插入路径。
     let filtered: Vec<(&str, &str)> = prop_map
         .iter()
         .map(|(k, v)| (k.as_str(), v.as_str()))
@@ -224,16 +225,16 @@ fn cow_patch_existing(
     let pa = serial_pa
         .as_deref_mut()
         .ok_or_else(|| anyhow::anyhow!("serial area not available"))?;
-    if let Err(e) = area.update(data_off, value, pa) {
-        // inline prop 新值超过 PROP_VALUE_MAX（92 字节）时无法原地扩展。
-        // 在 COW 私有副本里 remove + emplace 重建为 long 模式——与 companion
-        // resetprop 的 delete+set fallback 同一手法，但只影响本进程。
-        info!("COW Phase1: update '{key}' failed ({e}), trying remove+emplace");
-        if !area.remove(key)? {
-            anyhow::bail!("remove before long-value emplace failed for '{key}'");
-        }
-        area.emplace(key, value.as_bytes(), 0)?;
-    }
+    // ksu_props ≥ ddb6ee7：`update()` 原地支持 ≥ PROP_VALUE_MAX 的长值——内部重新
+    // 分配 long buffer 并改写 prop_info 的 long offset，prop_info 地址与 trie 布局
+    // 不变（旧 buffer 内容保留，并发读者不会读到撕裂值）。
+    // 不再需要 remove+emplace：那样会丢弃原 prop_info 节点、改变 trie 布局，
+    // 且缓存了 prop_info* 的读法会读到墓碑。
+    // 返回的 need_rebuild 表示旧 long buffer 成为孤儿；COW 是私有副本，随进程
+    // 消亡，无需 rebuild。
+    let mut need_rebuild = false;
+    area.update(data_off, value, pa, &mut need_rebuild)
+        .map_err(|e| anyhow::anyhow!("COW Phase1: update '{key}' failed: {e}"))?;
 
     // ── Phase 2: 扫描其他 build area，patch bionic prefix routing 可能命中的区域 ──
     // OnePlus/OPPO 设备上 __system_property_find 返回 build_prop 指针，但 bionic 的
@@ -276,26 +277,19 @@ fn cow_patch_existing(
         match cross_area.find(key) {
             Ok(Some(off)) => {
                 if let Some(pa) = serial_pa.as_deref_mut() {
-                    let patched = match cross_area.update(off, value, pa) {
-                        Ok(()) => true,
+                    // 同 Phase 1：长值由 update() 原地处理，无需 remove+emplace
+                    let mut need_rebuild = false;
+                    match cross_area.update(off, value, pa, &mut need_rebuild) {
+                        Ok(()) => {
+                            cross_patched += 1;
+                            info!("COW cross-area: '{key}' patched in {p}", p = mapping.path);
+                        }
                         Err(e) => {
-                            // 同 Phase 1：inline prop 超长值 remove+emplace 重建 long 模式
-                            info!(
-                                "COW cross-area: update '{key}' failed in {p} ({e}), trying remove+emplace",
+                            warn!(
+                                "COW cross-area: update '{key}' failed in {p}: {e}",
                                 p = mapping.path
                             );
-                            matches!(
-                                (
-                                    cross_area.remove(key),
-                                    cross_area.emplace(key, value.as_bytes(), 0)
-                                ),
-                                (Ok(true), Ok(()))
-                            )
                         }
-                    };
-                    if patched {
-                        cross_patched += 1;
-                        info!("COW cross-area: '{key}' patched in {p}", p = mapping.path);
                     }
                 }
             }

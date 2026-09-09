@@ -341,8 +341,15 @@ fn rebuild_all_contexts(keys_iter: impl Iterator<Item = impl AsRef<str>>) {
         }
     }
     for ctx in &contexts {
-        if let Err(e) = sys_prop::rebuild(ctx) {
+        // ksu_props ≥ ddb6ee7：`rebuild(context, check, appcompat)` 一次只处理一个
+        // area；normal 与 appcompat 各调一次以覆盖两侧（与旧版单参 rebuild 等价）。
+        // check=false：无条件重建，保留旧行为（长值 update 后旧 long buffer 会成为
+        // 孤儿，需要重建回收）。
+        if let Err(e) = sys_prop::rebuild(ctx, false, false) {
             warn!("prop area rebuild for {ctx} failed (non-fatal): {e}");
+        }
+        if let Err(e) = sys_prop::rebuild(ctx, false, true) {
+            warn!("appcompat prop area rebuild for {ctx} failed (non-fatal): {e}");
         }
     }
 }
@@ -531,14 +538,14 @@ fn new_resetprop() -> anyhow::Result<ResetProp> {
 fn apply_resetprop(key: &str, value: &str) -> anyhow::Result<()> {
     let rp = new_resetprop()?;
 
-    if let Err(e) = rp.set(key, value) {
-        // 值超过 PROP_VALUE_MAX 时，inline prop_info 无法原地扩展。
-        // 先删除旧属性（释放 inline 空间），再重新创建为 long 模式。
-        warn!("resetprop set failed for {key}, trying delete+set: {e}");
-        let _ = rp.delete(key);
-        rp.set(key, value)
-            .map_err(|e2| anyhow::anyhow!("resetprop delete+set failed for {key}: {e2}"))?;
-    }
+    // ksu_props ≥ ddb6ee7：`set()` 原地支持任意长度的新值（≥ PROP_VALUE_MAX 时内部
+    // 重新分配 long buffer 并改写 prop_info 的 long offset），不再需要
+    // delete+set 兜底——后者是全局可见的破坏性操作（delete 与 set 之间其他进程
+    // 读到空值，set 再失败则属性永久丢失）。
+    // 返回的 bool 表示旧 long buffer 成为孤儿、需要 rebuild 回收；调用方
+    // （apply_props_batch / restore）结束时会统一 rebuild_all_contexts。
+    rp.set(key, value)
+        .map_err(|e| anyhow::anyhow!("resetprop set failed for {key}: {e}"))?;
     Ok(())
 }
 
