@@ -94,6 +94,12 @@ function normalizeDeviceInfoFields(source: UnknownRecord): Partial<DeviceInfo> {
   const buildId = asOptionalString(source.build_id)
   if (buildId !== undefined) normalized.build_id = buildId
 
+  const displayId = asOptionalString(source.display_id)
+  if (displayId !== undefined) normalized.display_id = displayId
+
+  const incremental = asOptionalString(source.incremental)
+  if (incremental !== undefined) normalized.incremental = incremental
+
   const characteristics = asOptionalString(source.characteristics)
   if (characteristics !== undefined) normalized.characteristics = characteristics
 

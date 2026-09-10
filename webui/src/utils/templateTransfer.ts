@@ -18,6 +18,8 @@ const TEMPLATE_SIGNAL_KEYS = [
   'marketname',
   'fingerprint',
   'build_id',
+  'display_id',
+  'incremental',
   'characteristics',
   'android_version',
   'sdk_int',

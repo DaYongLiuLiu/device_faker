@@ -79,6 +79,12 @@ pub fn hook_build_fields(
                 .map_err(|_e| jni::errors::Error::JniCall(jni::errors::JniError::Unknown))?;
         }
 
+        // Build.DISPLAY 的属性来源是 ro.build.display.id（单一属性，无分区副本）
+        if let Some(display_id) = field_str(&merged_config.display_id) {
+            set_build_field(jenv, &build_class, jni_str!("DISPLAY"), display_id)
+                .map_err(|_e| jni::errors::Error::JniCall(jni::errors::JniError::Unknown))?;
+        }
+
         hook_version_fields(jenv, &build_class, merged_config)
             .map_err(|_e| jni::errors::Error::JniCall(jni::errors::JniError::Unknown))?;
 
@@ -103,6 +109,11 @@ fn hook_version_fields(
 
     if let Some(sdk_int) = merged_config.sdk_int {
         set_build_int_field(env, &version_class, jni_str!("SDK_INT"), sdk_int as i32)?;
+    }
+
+    // Build.VERSION.INCREMENTAL 的属性来源是 ro.build.version.incremental
+    if let Some(incremental) = field_str(&merged_config.incremental) {
+        set_build_field(env, &version_class, jni_str!("INCREMENTAL"), incremental)?;
     }
 
     Ok(())

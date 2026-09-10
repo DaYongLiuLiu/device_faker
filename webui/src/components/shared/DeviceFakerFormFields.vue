@@ -62,6 +62,20 @@
         <el-input v-model="formData.build_id" :placeholder="t('templates.placeholders.build_id')" />
       </el-form-item>
 
+      <el-form-item :label="t('templates.fields.display_id')">
+        <el-input
+          v-model="formData.display_id"
+          :placeholder="t('templates.placeholders.display_id')"
+        />
+      </el-form-item>
+
+      <el-form-item :label="t('templates.fields.incremental')">
+        <el-input
+          v-model="formData.incremental"
+          :placeholder="t('templates.placeholders.incremental')"
+        />
+      </el-form-item>
+
       <el-form-item :label="t('templates.fields.android_version')">
         <el-input
           v-model="formData.android_version"

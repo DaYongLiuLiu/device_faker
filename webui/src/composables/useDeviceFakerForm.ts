@@ -22,6 +22,8 @@ export interface DeviceFakerFormData {
   marketname: string
   fingerprint: string
   build_id: string
+  display_id: string
+  incremental: string
   android_version: string
   sdk_int: string
   dpi: string
@@ -66,6 +68,8 @@ function createEmptyFormData(): DeviceFakerFormData {
     marketname: '',
     fingerprint: '',
     build_id: '',
+    display_id: '',
+    incremental: '',
     android_version: '',
     sdk_int: '',
     dpi: '',
@@ -101,6 +105,18 @@ export function formDataToTemplate(formData: DeviceFakerFormData, base?: Templat
     template.build_id = formData.build_id
   } else {
     delete template.build_id
+  }
+
+  if (formData.display_id) {
+    template.display_id = formData.display_id
+  } else {
+    delete template.display_id
+  }
+
+  if (formData.incremental) {
+    template.incremental = formData.incremental
+  } else {
+    delete template.incremental
   }
 
   if (formData.sdk_int) {
@@ -180,6 +196,8 @@ export function templateToFormData(template: Template): DeviceFakerFormData {
     marketname: template.marketname || '',
     fingerprint: template.fingerprint || '',
     build_id: template.build_id || '',
+    display_id: template.display_id || '',
+    incremental: template.incremental || '',
     android_version: template.android_version || '',
     sdk_int: template.sdk_int ? String(template.sdk_int) : '',
     dpi: template.dpi ? String(template.dpi) : '',
@@ -205,6 +223,8 @@ export function appConfigToFormData(appConfig: AppConfig): DeviceFakerFormData {
     marketname: appConfig.marketname || '',
     fingerprint: appConfig.fingerprint || '',
     build_id: appConfig.build_id || '',
+    display_id: appConfig.display_id || '',
+    incremental: appConfig.incremental || '',
     android_version: appConfig.android_version || '',
     sdk_int: appConfig.sdk_int ? String(appConfig.sdk_int) : '',
     dpi: appConfig.dpi ? String(appConfig.dpi) : '',
@@ -231,6 +251,8 @@ export function formDataToAppConfig(formData: DeviceFakerFormData, packageName: 
     marketname: formData.marketname,
     fingerprint: formData.fingerprint,
     build_id: formData.build_id,
+    display_id: formData.display_id,
+    incremental: formData.incremental,
     android_version: formData.android_version,
     sdk_int: formData.sdk_int ? Number(formData.sdk_int) : undefined,
     dpi:

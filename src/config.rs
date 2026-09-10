@@ -213,6 +213,12 @@ pub struct DeviceTemplate {
     pub fingerprint: Option<String>,
     #[serde(default)]
     pub build_id: Option<String>,
+    /// 系统版本号（映射 Build.DISPLAY + ro.build.display.id，单属性无分区副本）
+    #[serde(default)]
+    pub display_id: Option<String>,
+    /// 构建增量号（映射 Build.VERSION.INCREMENTAL + ro.build.version.incremental 族）
+    #[serde(default)]
+    pub incremental: Option<String>,
     #[serde(default)]
     pub characteristics: Option<String>,
     /// Android 版本伪装（如 "15", "14"）
@@ -268,6 +274,12 @@ pub struct AppConfig {
     pub fingerprint: Option<String>,
     #[serde(default)]
     pub build_id: Option<String>,
+    /// 系统版本号（映射 Build.DISPLAY + ro.build.display.id，单属性无分区副本）
+    #[serde(default)]
+    pub display_id: Option<String>,
+    /// 构建增量号（映射 Build.VERSION.INCREMENTAL + ro.build.version.incremental 族）
+    #[serde(default)]
+    pub incremental: Option<String>,
     #[serde(default)]
     pub characteristics: Option<String>,
     /// Android 版本伪装（如 "15", "14"）
@@ -347,6 +359,8 @@ impl Config {
                 soc_model: app.soc_model.clone(),
                 fingerprint: app.fingerprint.clone(),
                 build_id: app.build_id.clone(),
+                display_id: app.display_id.clone(),
+                incremental: app.incremental.clone(),
                 characteristics: app.characteristics.clone(),
                 android_version: app.android_version.clone(),
                 sdk_int: app.sdk_int,
@@ -380,6 +394,8 @@ impl Config {
                 soc_model: template.soc_model.clone(),
                 fingerprint: template.fingerprint.clone(),
                 build_id: template.build_id.clone(),
+                display_id: template.display_id.clone(),
+                incremental: template.incremental.clone(),
                 characteristics: template.characteristics.clone(),
                 android_version: template.android_version.clone(),
                 sdk_int: template.sdk_int,
@@ -461,6 +477,15 @@ impl Config {
 
         if let Some(build_id) = field_value(&merged.build_id) {
             insert_build_family(&mut map, "id", &build_id);
+        }
+
+        // Build.DISPLAY 的属性来源是 ro.build.display.id（单一属性，同 hardware/board）
+        if let Some(display_id) = field_value(&merged.display_id) {
+            map.insert("ro.build.display.id".to_string(), display_id);
+        }
+
+        if let Some(incremental) = field_value(&merged.incremental) {
+            insert_build_family(&mut map, "version.incremental", &incremental);
         }
 
         if let Some(characteristics) = field_value(&merged.characteristics) {
@@ -546,6 +571,20 @@ impl Config {
             delete_build_family(&mut delete_props, "id");
         }
         if merged
+            .display_id
+            .as_ref()
+            .is_some_and(|s| s == "__DELETE__")
+        {
+            delete_props.push("ro.build.display.id".to_string());
+        }
+        if merged
+            .incremental
+            .as_ref()
+            .is_some_and(|s| s == "__DELETE__")
+        {
+            delete_build_family(&mut delete_props, "version.incremental");
+        }
+        if merged
             .characteristics
             .as_ref()
             .is_some_and(|s| s == "__DELETE__")
@@ -586,6 +625,10 @@ pub struct MergedAppConfig {
     pub soc_model: Option<String>,
     pub fingerprint: Option<String>,
     pub build_id: Option<String>,
+    /// 系统版本号 → Build.DISPLAY + ro.build.display.id
+    pub display_id: Option<String>,
+    /// 构建增量号 → Build.VERSION.INCREMENTAL + ro.build.version.incremental 族
+    pub incremental: Option<String>,
     pub characteristics: Option<String>,
     pub android_version: Option<String>,
     pub sdk_int: Option<u32>,
@@ -617,6 +660,9 @@ impl MergedAppConfig {
             fill_profile_default(&mut self.device, parts.device.clone());
             fill_profile_default(&mut self.android_version, parts.release.clone());
             fill_profile_default(&mut self.build_id, parts.build_id.clone());
+            // 指纹 incremental 同步进专用字段，保证 Build.VERSION.INCREMENTAL 与
+            // ro.build.version.incremental 一致（原先只进 custom_props 会漏 hook）
+            fill_profile_default(&mut self.incremental, parts.incremental.clone());
         }
 
         // Build.PRODUCT 的属性来源是 ro.product.name，而本项目的 product 与
@@ -640,9 +686,6 @@ impl MergedAppConfig {
 
         if let Some(parts) = parsed {
             let props = self.custom_props.get_or_insert_with(HashMap::new);
-            props
-                .entry("ro.build.version.incremental".to_string())
-                .or_insert(parts.incremental);
             props
                 .entry("ro.build.type".to_string())
                 .or_insert(parts.build_type);
