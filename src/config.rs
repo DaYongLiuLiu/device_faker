@@ -219,6 +219,9 @@ pub struct DeviceTemplate {
     /// 构建增量号（映射 Build.VERSION.INCREMENTAL + ro.build.version.incremental 族）
     #[serde(default)]
     pub incremental: Option<String>,
+    /// 安全补丁日期（映射 Build.VERSION.SECURITY_PATCH + ro.build.version.security_patch 族）
+    #[serde(default)]
+    pub security_patch: Option<String>,
     #[serde(default)]
     pub characteristics: Option<String>,
     /// Android 版本伪装（如 "15", "14"）
@@ -280,6 +283,9 @@ pub struct AppConfig {
     /// 构建增量号（映射 Build.VERSION.INCREMENTAL + ro.build.version.incremental 族）
     #[serde(default)]
     pub incremental: Option<String>,
+    /// 安全补丁日期（映射 Build.VERSION.SECURITY_PATCH + ro.build.version.security_patch 族）
+    #[serde(default)]
+    pub security_patch: Option<String>,
     #[serde(default)]
     pub characteristics: Option<String>,
     /// Android 版本伪装（如 "15", "14"）
@@ -361,6 +367,7 @@ impl Config {
                 build_id: app.build_id.clone(),
                 display_id: app.display_id.clone(),
                 incremental: app.incremental.clone(),
+                security_patch: app.security_patch.clone(),
                 characteristics: app.characteristics.clone(),
                 android_version: app.android_version.clone(),
                 sdk_int: app.sdk_int,
@@ -396,6 +403,7 @@ impl Config {
                 build_id: template.build_id.clone(),
                 display_id: template.display_id.clone(),
                 incremental: template.incremental.clone(),
+                security_patch: template.security_patch.clone(),
                 characteristics: template.characteristics.clone(),
                 android_version: template.android_version.clone(),
                 sdk_int: template.sdk_int,
@@ -486,6 +494,12 @@ impl Config {
 
         if let Some(incremental) = field_value(&merged.incremental) {
             insert_build_family(&mut map, "version.incremental", &incremental);
+        }
+
+        // Build.VERSION.SECURITY_PATCH 的属性来源是 ro.build.version.security_patch，
+        // 各分区（system/vendor/product 等）均导出自己的副本，与 version.sdk 同族。
+        if let Some(security_patch) = field_value(&merged.security_patch) {
+            insert_build_family(&mut map, "version.security_patch", &security_patch);
         }
 
         if let Some(characteristics) = field_value(&merged.characteristics) {
@@ -585,6 +599,13 @@ impl Config {
             delete_build_family(&mut delete_props, "version.incremental");
         }
         if merged
+            .security_patch
+            .as_ref()
+            .is_some_and(|s| s == "__DELETE__")
+        {
+            delete_build_family(&mut delete_props, "version.security_patch");
+        }
+        if merged
             .characteristics
             .as_ref()
             .is_some_and(|s| s == "__DELETE__")
@@ -629,6 +650,8 @@ pub struct MergedAppConfig {
     pub display_id: Option<String>,
     /// 构建增量号 → Build.VERSION.INCREMENTAL + ro.build.version.incremental 族
     pub incremental: Option<String>,
+    /// 安全补丁日期 → Build.VERSION.SECURITY_PATCH + ro.build.version.security_patch 族
+    pub security_patch: Option<String>,
     pub characteristics: Option<String>,
     pub android_version: Option<String>,
     pub sdk_int: Option<u32>,

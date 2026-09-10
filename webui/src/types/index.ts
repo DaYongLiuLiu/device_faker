@@ -24,6 +24,7 @@ export interface DeviceInfo {
   build_id?: string
   display_id?: string
   incremental?: string
+  security_patch?: string
   characteristics?: string
   android_version?: string
   sdk_int?: number

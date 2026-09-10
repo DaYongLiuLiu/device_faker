@@ -80,6 +80,12 @@ const SDK_INT_KEYS: &[&str] = &[
 ];
 const HARDWARE_KEYS: &[&str] = &["ro.hardware"];
 const BOARD_KEYS: &[&str] = &["ro.product.board"];
+const SECURITY_PATCH_KEYS: &[&str] = &[
+    "ro.build.version.security_patch",
+    "ro.system.build.version.security_patch",
+    "ro.vendor.build.version.security_patch",
+    "ro.product.build.version.security_patch",
+];
 
 #[derive(Debug, Serialize)]
 struct OutputConfig {
@@ -112,6 +118,8 @@ struct DeviceTemplateToml {
     #[serde(skip_serializing_if = "Option::is_none")]
     build_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    security_patch: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     characteristics: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     android_version: Option<String>,
@@ -132,6 +140,7 @@ impl DeviceTemplateToml {
             || self.board.is_some()
             || self.fingerprint.is_some()
             || self.build_id.is_some()
+            || self.security_patch.is_some()
             || self.characteristics.is_some()
             || self.android_version.is_some()
             || self.sdk_int.is_some()
@@ -217,6 +226,7 @@ fn build_template(properties: &BTreeMap<String, String>) -> DeviceTemplateToml {
         board: read_non_empty_property(properties, BOARD_KEYS),
         fingerprint: read_non_empty_property(properties, FINGERPRINT_KEYS),
         build_id: read_non_empty_property(properties, BUILD_ID_KEYS),
+        security_patch: read_non_empty_property(properties, SECURITY_PATCH_KEYS),
         characteristics: read_non_empty_property(properties, CHARACTERISTICS_KEYS),
         android_version: read_non_empty_property(properties, ANDROID_VERSION_KEYS),
         sdk_int: parse_sdk_int(properties),
@@ -425,6 +435,7 @@ mod tests {
             ro.product.board=kalama
             ro.build.fingerprint=Xiaomi/haotian/haotian:15/AP4A.250205.002/123456:user/release-keys
             ro.build.id=AP4A.250205.002
+            ro.build.version.security_patch=2025-06-05
             ro.build.characteristics=nosdcard
             ro.build.version.release=15
             ro.build.version.sdk=35
@@ -445,6 +456,7 @@ mod tests {
             Some("Xiaomi/haotian/haotian:15/AP4A.250205.002/123456:user/release-keys")
         );
         assert_eq!(template.build_id.as_deref(), Some("AP4A.250205.002"));
+        assert_eq!(template.security_patch.as_deref(), Some("2025-06-05"));
         assert_eq!(template.characteristics.as_deref(), Some("nosdcard"));
         assert_eq!(template.android_version.as_deref(), Some("15"));
         assert_eq!(template.sdk_int, Some(35));

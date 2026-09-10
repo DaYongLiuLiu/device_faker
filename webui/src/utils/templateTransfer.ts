@@ -20,6 +20,7 @@ const TEMPLATE_SIGNAL_KEYS = [
   'build_id',
   'display_id',
   'incremental',
+  'security_patch',
   'characteristics',
   'android_version',
   'sdk_int',

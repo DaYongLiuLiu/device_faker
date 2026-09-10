@@ -76,6 +76,13 @@
         />
       </el-form-item>
 
+      <el-form-item :label="t('templates.fields.security_patch')">
+        <el-input
+          v-model="formData.security_patch"
+          :placeholder="t('templates.placeholders.security_patch')"
+        />
+      </el-form-item>
+
       <el-form-item :label="t('templates.fields.android_version')">
         <el-input
           v-model="formData.android_version"

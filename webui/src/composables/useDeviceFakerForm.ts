@@ -24,6 +24,7 @@ export interface DeviceFakerFormData {
   build_id: string
   display_id: string
   incremental: string
+  security_patch: string
   android_version: string
   sdk_int: string
   dpi: string
@@ -70,6 +71,7 @@ function createEmptyFormData(): DeviceFakerFormData {
     build_id: '',
     display_id: '',
     incremental: '',
+    security_patch: '',
     android_version: '',
     sdk_int: '',
     dpi: '',
@@ -117,6 +119,12 @@ export function formDataToTemplate(formData: DeviceFakerFormData, base?: Templat
     template.incremental = formData.incremental
   } else {
     delete template.incremental
+  }
+
+  if (formData.security_patch) {
+    template.security_patch = formData.security_patch
+  } else {
+    delete template.security_patch
   }
 
   if (formData.sdk_int) {
@@ -198,6 +206,7 @@ export function templateToFormData(template: Template): DeviceFakerFormData {
     build_id: template.build_id || '',
     display_id: template.display_id || '',
     incremental: template.incremental || '',
+    security_patch: template.security_patch || '',
     android_version: template.android_version || '',
     sdk_int: template.sdk_int ? String(template.sdk_int) : '',
     dpi: template.dpi ? String(template.dpi) : '',
@@ -225,6 +234,7 @@ export function appConfigToFormData(appConfig: AppConfig): DeviceFakerFormData {
     build_id: appConfig.build_id || '',
     display_id: appConfig.display_id || '',
     incremental: appConfig.incremental || '',
+    security_patch: appConfig.security_patch || '',
     android_version: appConfig.android_version || '',
     sdk_int: appConfig.sdk_int ? String(appConfig.sdk_int) : '',
     dpi: appConfig.dpi ? String(appConfig.dpi) : '',
@@ -253,6 +263,7 @@ export function formDataToAppConfig(formData: DeviceFakerFormData, packageName: 
     build_id: formData.build_id,
     display_id: formData.display_id,
     incremental: formData.incremental,
+    security_patch: formData.security_patch,
     android_version: formData.android_version,
     sdk_int: formData.sdk_int ? Number(formData.sdk_int) : undefined,
     dpi:

@@ -116,6 +116,16 @@ fn hook_version_fields(
         set_build_field(env, &version_class, jni_str!("INCREMENTAL"), incremental)?;
     }
 
+    // Build.VERSION.SECURITY_PATCH 的属性来源是 ro.build.version.security_patch
+    if let Some(security_patch) = field_str(&merged_config.security_patch) {
+        set_build_field(
+            env,
+            &version_class,
+            jni_str!("SECURITY_PATCH"),
+            security_patch,
+        )?;
+    }
+
     Ok(())
 }
 

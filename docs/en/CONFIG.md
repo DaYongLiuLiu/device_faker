@@ -121,12 +121,17 @@ The following fields can be used in templates or `[[apps]]`. Each field drives b
 
 > **"Partition variants"** means the 6 properties `ro.product.{odm,vendor,system,system_ext,product,bootimage}.<field>`. Bionic property reads route by prefix to partition-specific property areas — OnePlus/OPPO and other devices read these variants, so writing them all keeps reads consistent across devices.
 
-### Android Version Spoofing
+### Android Version and Build Info Spoofing
 
 | Field | Build field | System properties | Examples |
 |-------|-------------|-------------------|----------|
 | `android_version` | `Build.VERSION.RELEASE` | `ro.build.version.release`, `ro.system.build.version.release`, `ro.vendor.build.version.release`, `ro.product.build.version.release` | `"15"`, `"14"`, `"13"` |
 | `sdk_int` | `Build.VERSION.SDK_INT` (integer) | `ro.build.version.sdk`, `ro.system.build.version.sdk`, `ro.vendor.build.version.sdk`, `ro.product.build.version.sdk` | `35`, `34`, `33` |
+| `display_id` | `Build.DISPLAY` | `ro.build.display.id` | `PD2546_16.0.9.400(CN01)`; no partition variants |
+| `incremental` | `Build.VERSION.INCREMENTAL` | `ro.build.version.incremental` + partition variants | `compiler260228234011` |
+| `security_patch` | `Build.VERSION.SECURITY_PATCH` | `ro.build.version.security_patch` + partition variants | `2025-06-05` |
+
+> `security_patch` writes the whole family `ro.{system,system_ext,product,vendor,odm,bootimage,system_dlkm,vendor_dlkm,odm_dlkm}.build.version.security_patch`, so detectors that read a partition variant directly do not see the real value.
 
 ### Per-app DPI
 

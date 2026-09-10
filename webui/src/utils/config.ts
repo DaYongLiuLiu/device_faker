@@ -100,6 +100,9 @@ function normalizeDeviceInfoFields(source: UnknownRecord): Partial<DeviceInfo> {
   const incremental = asOptionalString(source.incremental)
   if (incremental !== undefined) normalized.incremental = incremental
 
+  const securityPatch = asOptionalString(source.security_patch)
+  if (securityPatch !== undefined) normalized.security_patch = securityPatch
+
   const characteristics = asOptionalString(source.characteristics)
   if (characteristics !== undefined) normalized.characteristics = characteristics
 
