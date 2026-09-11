@@ -131,7 +131,7 @@ The following fields can be used in templates or `[[apps]]`. Each field drives b
 | `incremental` | `Build.VERSION.INCREMENTAL` | `ro.build.version.incremental` + partition variants | `compiler260228234011` |
 | `security_patch` | `Build.VERSION.SECURITY_PATCH` | `ro.build.version.security_patch` + partition variants | `2025-06-05` |
 
-> `security_patch` writes the whole family `ro.{system,system_ext,product,vendor,odm,bootimage,system_dlkm,vendor_dlkm,odm_dlkm}.build.version.security_patch`, so detectors that read a partition variant directly do not see the real value.
+> `security_patch` writes the whole family `ro.{system,system_ext,product,vendor,odm,bootimage,system_dlkm,vendor_dlkm,odm_dlkm}.build.version.security_patch` plus the bare vendor copy `ro.vendor.build.security_patch` (the Vendor security patch level).
 
 ### Per-app DPI
 

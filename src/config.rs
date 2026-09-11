@@ -500,6 +500,8 @@ impl Config {
         // 各分区（system/vendor/product 等）均导出自己的副本，与 version.sdk 同族。
         if let Some(security_patch) = field_value(&merged.security_patch) {
             insert_build_family(&mut map, "version.security_patch", &security_patch);
+            // vendor 分区另导出一个无 .version. 段的裸名副本
+            map.insert("ro.vendor.build.security_patch".to_string(), security_patch);
         }
 
         if let Some(characteristics) = field_value(&merged.characteristics) {
@@ -604,6 +606,7 @@ impl Config {
             .is_some_and(|s| s == "__DELETE__")
         {
             delete_build_family(&mut delete_props, "version.security_patch");
+            delete_props.push("ro.vendor.build.security_patch".to_string());
         }
         if merged
             .characteristics

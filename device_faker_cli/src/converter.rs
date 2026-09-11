@@ -85,6 +85,8 @@ const SECURITY_PATCH_KEYS: &[&str] = &[
     "ro.system.build.version.security_patch",
     "ro.vendor.build.version.security_patch",
     "ro.product.build.version.security_patch",
+    // vendor 分区独有的裸名副本（无 .version. 段）。
+    "ro.vendor.build.security_patch",
 ];
 
 #[derive(Debug, Serialize)]
@@ -460,6 +462,30 @@ mod tests {
         assert_eq!(template.characteristics.as_deref(), Some("nosdcard"));
         assert_eq!(template.android_version.as_deref(), Some("15"));
         assert_eq!(template.sdk_int, Some(35));
+    }
+
+    #[test]
+    fn security_patch_prefers_version_keys_over_vendor_bare_name() {
+        // 标准 key 与 vendor 裸名副本同时存在时，取标准 key
+        let properties = parse_property_text(
+            r#"
+            ro.build.version.security_patch=2025-06-05
+            ro.vendor.build.security_patch=2024-12-01
+            "#,
+        );
+        let template = build_template(&properties);
+        assert_eq!(template.security_patch.as_deref(), Some("2025-06-05"));
+
+        // 只有裸名副本的机型（无 .version. 变体）也能导入。
+        let properties = parse_property_text(
+            r#"
+            ro.product.manufacturer=Xiaomi
+            ro.product.model=25010PN30C
+            ro.vendor.build.security_patch=2024-12-01
+            "#,
+        );
+        let template = build_template(&properties);
+        assert_eq!(template.security_patch.as_deref(), Some("2024-12-01"));
     }
 
     #[test]

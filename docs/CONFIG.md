@@ -131,7 +131,7 @@ manufacturer = "Samsung"
 | `incremental` | `Build.VERSION.INCREMENTAL` | `ro.build.version.incremental` 及分区变体 | `compiler260228234011` |
 | `security_patch` | `Build.VERSION.SECURITY_PATCH` | `ro.build.version.security_patch` 及分区变体 | `2025-06-05` |
 
-> `security_patch` 会按 `ro.{system,system_ext,product,vendor,odm,bootimage,system_dlkm,vendor_dlkm,odm_dlkm}.build.version.security_patch` 整族写入，避免检测程序直接读分区变体拿到真机值。
+> `security_patch` 会按 `ro.{system,system_ext,product,vendor,odm,bootimage,system_dlkm,vendor_dlkm,odm_dlkm}.build.version.security_patch` 整族写入，另写入裸名副本 `ro.vendor.build.security_patch`（即「供应商安全补丁级别」）。
 
 ### DPI伪装
 
